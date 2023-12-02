@@ -10,8 +10,11 @@ def get_queue(access_token):
     headers = {
         'Authorization': 'Bearer {}'.format(access_token)
     }
+    try:
+        queue_response = requests.get(END_URL, headers=headers)
+    except:
+        print('An exception has occured')
 
-    queue_response = requests.get(END_URL, headers=headers)
     response_code = queue_response.status_code
     response_json = queue_response.json()
 
