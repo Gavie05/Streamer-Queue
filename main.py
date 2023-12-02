@@ -1,6 +1,5 @@
 import json
 import asyncio
-from auth import get_tokens
 from token_refresh import get_new_token
 from fetch_queue import get_queue
 
@@ -8,16 +7,16 @@ from fetch_queue import get_queue
 cooldown = 1
 
 # Get access token, refresh token, expiration time, and base64 encoded client id and secret for refreshing auth
-access_token, refresh_token, expires, auth_value = get_tokens()
+access_token, expires = get_new_token()
 
 # Refresh Access Token before it expires
-async def countdown(expires, refresh_token, auth_value):
+async def countdown(expires):
     expires -= 60
 
     while True:
         await asyncio.sleep(expires)
         global access_token
-        access_token, expires = get_new_token(refresh_token, auth_value)
+        access_token, expires = get_new_token()
         expires -= 60
         print('token refreshed')
 
@@ -30,10 +29,9 @@ async def makerequest(cooldown):
         response, request_code = get_queue(access_token)
 
         if request_code == 200:
-            print('Updated')
-            
-            with open(json_file_directory, 'w') as write_file: #Open Json File
-                json.dump(response, write_file, indent=4)  #Rewrite Json File
+            if response['currently_playing']:
+                with open(json_file_directory, 'w') as write_file: #Open Json File
+                    json.dump(response, write_file, indent=4)  #Rewrite Json File
 
             await asyncio.sleep(cooldown)
 
@@ -49,7 +47,7 @@ async def makerequest(cooldown):
 
 
 async def main():
-    await asyncio.gather(countdown(expires, refresh_token, auth_value), makerequest(cooldown))
+    await asyncio.gather(countdown(expires), makerequest(cooldown))
 
 
 if __name__ == '__main__':
